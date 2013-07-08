@@ -9,6 +9,8 @@ var express = require('express')
   , http = require('http')
   , path = require('path');
 
+var gpio = require("pi-gpio");
+
 var app = express();
 
 // all environments
@@ -29,6 +31,30 @@ app.use(express.static(path.join(__dirname, 'public')));
 if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
+
+
+/////// GLOBALS ///////
+var led_state = false;
+
+/////// INIT ///////
+//make sure output pin 16 is initialized to off
+gpio.open(16, "output", function(err) {     // Open pin 16 for output
+	gpio.write(16, 0, function() {          // Set pin 16 high (1)
+        gpio.close(16);                     // Close pin 16
+    });
+});
+
+//toggle the led state when this url is triggered
+app.get('/toggle', function(req, res){
+	led_state = !led_state;
+
+	gpio.open(16, "output", function(err) {     // Open pin 16 for output
+    	gpio.write(16, led_state, function() {          // Set pin 16 high (1)
+        	gpio.close(16);                     // Close pin 16
+    	});
+	});
+	res.send(200);
+});
 
 app.get('/', routes.index);
 app.get('/users', user.list);
